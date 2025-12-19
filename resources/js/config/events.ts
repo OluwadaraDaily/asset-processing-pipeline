@@ -3,5 +3,6 @@ export const CHANNELS = {
 };
 
 export const EVENTS = {
-    IMAGE_TRANSFORMATION: 'ImageTransformed',
+    IMAGE_TRANSFORMATION_SUCCESS: 'ImageTransformed',
+    IMAGE_TRANSFORMATION_FAILURE: 'ImageTransformationFailed',
 };

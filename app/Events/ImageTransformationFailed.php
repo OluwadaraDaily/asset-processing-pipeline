@@ -2,15 +2,12 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
-class ImageTransformed implements ShouldBroadcastNow
+class ImageTransformationFailed
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -20,13 +17,10 @@ class ImageTransformed implements ShouldBroadcastNow
     public function __construct(
         public string $uuid,
         public string $path,
-        public string $originalFileName,
+        public string $originalFilename,
+        public string $errorMessage
     ) {
-        Log::info('Image transformation event', [
-            'uuid' => $this->uuid,
-            'path' => $this->path,
-            'originalFileName' => $this->originalFileName,
-        ]);
+        //
     }
 
     /**
@@ -37,7 +31,7 @@ class ImageTransformed implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new Channel('image-transformations'),
+            new PrivateChannel('image-transformations'),
         ];
     }
 
@@ -46,9 +40,9 @@ class ImageTransformed implements ShouldBroadcastNow
         return [
             'uuid' => $this->uuid,
             'path' => $this->path,
-            'url' => Storage::url($this->path),
-            'status' => 'success',
-            'originalFilename' => $this->originalFileName,
+            'errorMessage' => $this->errorMessage,
+            'originalFilename' => $this->originalFilename,
+            'status' => 'error',
         ];
     }
 }

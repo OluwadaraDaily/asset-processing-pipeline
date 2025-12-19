@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\ImageTransformationFailed;
 use App\Events\ImageTransformed;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -14,6 +15,10 @@ use Intervention\Image\ImageManager;
 class TransformImage implements ShouldQueue
 {
     use Queueable;
+
+    public $tries = 3;
+
+    public $maxExceptions = 1;
 
     /**
      * Create a new job instance.
@@ -78,15 +83,19 @@ class TransformImage implements ShouldQueue
             event(new ImageTransformed($this->uuid, $this->path, $this->originalFilename));
         } catch (Exception $e) {
             Log::error('Image transformation failed', [
+                'uuid' => $this->uuid,
                 'path' => $this->path,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
+                'attempt' => $this->attempts(),
             ]);
 
-            // Optionally fire a failure event
-            // event(new ImageTransformationFailed($this->path, $e->getMessage()));
+            // If we've exhausted all retry attempts, fire failure event
+            if ($this->attempts() >= $this->tries) {
+                event(new ImageTransformationFailed($this->uuid, $this->path, $this->originalFilename, $e->getMessage()));
+            }
 
-            // Re-throw to mark job as failed (triggers retry)
+            // Re-throw to mark job as failed (triggers auto-retry by Laravel)
             throw $e;
         }
 
