@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label'
-import { useForm } from '@inertiajs/vue3';
-import { onUnmounted, ref, watch } from 'vue';
-import { useEchoPublic } from '@laravel/echo-vue';
-import { generateUUID } from '@/utils';
+import { Label } from '@/components/ui/label';
+import { Toaster } from '@/components/ui/sonner';
 import { CHANNELS, EVENTS } from '@/config/events';
-import 'vue-sonner/style.css'
-import { Toaster } from '@/components/ui/sonner'
-import { toast } from 'vue-sonner'
+import { generateUUID } from '@/utils';
+import { useForm } from '@inertiajs/vue3';
+import { useEchoPublic } from '@laravel/echo-vue';
+import { onUnmounted, ref } from 'vue';
+import { toast } from 'vue-sonner';
+import 'vue-sonner/style.css';
 
 interface ImageState {
     uuid: string;
@@ -29,19 +29,15 @@ interface ImageTransformationEvent {
 
 const imageStates = ref<Map<string, ImageState>>(new Map());
 
-useEchoPublic<ImageTransformationEvent>(
-    CHANNELS.IMAGE_TRANSFORMATION,
-    EVENTS.IMAGE_TRANSFORMATION,
-    (event) => {
-        console.log('ImageTransformed event received:', event);
-        toast.success(`${event.originalFileName} has been resized!`)
-        const state = imageStates.value.get(event.uuid);
-        if (state) {
-            state.status = 'completed';
-            state.downloadUrl = event.url;
-        }
+useEchoPublic<ImageTransformationEvent>(CHANNELS.IMAGE_TRANSFORMATION, EVENTS.IMAGE_TRANSFORMATION, (event) => {
+    console.log('ImageTransformed event received:', event);
+    toast.success(`${event.originalFileName} has been resized!`);
+    const state = imageStates.value.get(event.uuid);
+    if (state) {
+        state.status = 'completed';
+        state.downloadUrl = event.url;
     }
-);
+});
 
 const form = useForm({
     files: [] as File[],
@@ -55,7 +51,7 @@ const handleFileChange = (e: Event) => {
     if (target.files) {
         const newFiles = Array.from(target.files);
 
-        imageStates.value.forEach(state => URL.revokeObjectURL(state.previewUrl));
+        imageStates.value.forEach((state) => URL.revokeObjectURL(state.previewUrl));
         imageStates.value.clear();
 
         form.files = newFiles;
@@ -75,7 +71,6 @@ const handleFileChange = (e: Event) => {
 };
 
 const resetForm = () => {
-    
     // Reset form data
     form.files = [];
     form.uuids = [];
@@ -87,18 +82,18 @@ const resetForm = () => {
     if (fileInput) {
         fileInput.value = '';
     }
-}
+};
 
 const submit = () => {
-    imageStates.value.forEach(state => {
+    imageStates.value.forEach((state) => {
         state.status = 'uploading';
     });
 
     form.post('/upload', {
         forceFormData: true,
         onSuccess: () => {
-            resetForm()
-            imageStates.value.forEach(state => {
+            resetForm();
+            imageStates.value.forEach((state) => {
                 state.status = 'processing';
             });
         },
@@ -123,48 +118,31 @@ const getStatusColor = (status: ImageState['status']) => {
     }[status];
 };
 
-function handlePromiseClick() {
-  toast.promise<{ name: string }>(
-    () =>
-      new Promise(resolve =>
-        setTimeout(() => resolve({ name: 'Event' }), 2000),
-      ),
-    {
-      loading: 'Loading...',
-      success: (data: { name: string }) => `${data.name} has been created`,
-      error: 'Error',
-    },
-  )
-}
-
 onUnmounted(() => {
-    imageStates.value.forEach(state => URL.revokeObjectURL(state.previewUrl));
+    imageStates.value.forEach((state) => URL.revokeObjectURL(state.previewUrl));
 });
 </script>
 
 <template>
-    <div class="space-y-8 h-full flex flex-col w-[60%] mx-auto">
-        <div class="p-4 justify-center items-center mt-20">
-            <h1 class="text-3xl font-bold mb-8">Upload Form</h1>
+    <div class="mx-auto flex h-full w-[60%] flex-col space-y-8">
+        <div class="mt-20 items-center justify-center p-4">
+            <h1 class="mb-8 text-3xl font-bold">Upload Form</h1>
             <form class="space-y-5" @submit.prevent="submit">
                 <div class="flex items-center gap-5">
                     <div class="flex-1/2">
                         <Label>Width</Label>
-                        <Input v-model="form.width" type="number"/>
+                        <Input v-model="form.width" type="number" />
                     </div>
                     <div class="flex-1/2">
                         <Label>Height</Label>
-                        <Input v-model="form.height" type="number"/>
+                        <Input v-model="form.height" type="number" />
                     </div>
                 </div>
                 <div>
                     <Label>Files</Label>
-                    <Input type="file" multiple @change="handleFileChange" name="files" id="files" accept="image/*"/>
-
+                    <Input type="file" multiple @change="handleFileChange" name="files" id="files" accept="image/*" />
                 </div>
-                <progress v-if="form.progress" :value="form.progress.percentage" max="100">
-                    {{ form.progress.percentage }}%
-                </progress>
+                <progress v-if="form.progress" :value="form.progress.percentage" max="100">{{ form.progress.percentage }}%</progress>
                 <Button type="submit" :disabled="form.processing || imageStates.size === 0">
                     {{ form.processing ? 'Uploading...' : 'Upload Images' }}
                 </Button>
@@ -173,25 +151,14 @@ onUnmounted(() => {
 
         <!-- Image previews with status -->
         <div class="flex flex-col gap-5 pb-10">
-            <div
-                v-for="[uuid, state] in imageStates"
-                :key="uuid"
-                class="p-4 flex justify-between items-center bg-black/5 rounded-xl"
-            >
+            <div v-for="[uuid, state] in imageStates" :key="uuid" class="flex items-center justify-between rounded-xl bg-black/5 p-4">
                 <div class="flex items-center gap-4">
-                    <div class="h-15 w-15 rounded-md border border-black overflow-hidden">
-                        <img
-                            :src="state.previewUrl"
-                            class="h-full w-full object-cover"
-                            :alt="state.file.name"
-                        />
+                    <div class="h-15 w-15 overflow-hidden rounded-md border border-black">
+                        <img :src="state.previewUrl" class="h-full w-full object-cover" :alt="state.file.name" />
                     </div>
                     <div class="flex flex-col gap-1">
                         <p class="font-medium">{{ state.file.name }}</p>
-                        <span
-                            class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full w-max"
-                            :class="getStatusColor(state.status)"
-                        >
+                        <span class="inline-flex w-max items-center rounded-full px-2 py-1 text-xs font-medium" :class="getStatusColor(state.status)">
                             {{ getStatusDisplay(state.status) }}
                         </span>
                     </div>

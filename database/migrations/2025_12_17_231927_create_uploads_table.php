@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('uploads', function (Blueprint $table) {
             $table->id();
-            $table->string("device");
-            $table->ipAddress("ip_address");
-            $table->unsignedInteger("no_of_files");
-            $table->string("status")->default("pending");
-            $table->string("storage_path");
-            $table->string("error_message")->nullable();
+            $table->string('device');
+            $table->ipAddress('ip_address');
+            $table->unsignedInteger('no_of_files');
+            $table->string('status')->default('pending');
+            $table->string('storage_path');
+            $table->string('error_message')->nullable();
             $table->timestamps();
         });
     }

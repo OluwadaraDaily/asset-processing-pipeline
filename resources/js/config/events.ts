@@ -1,7 +1,7 @@
 export const CHANNELS = {
-  IMAGE_TRANSFORMATION: 'image-transformations'
-}
+    IMAGE_TRANSFORMATION: 'image-transformations',
+};
 
 export const EVENTS = {
-  IMAGE_TRANSFORMATION: 'ImageTransformed'
-}
+    IMAGE_TRANSFORMATION: 'ImageTransformed',
+};
