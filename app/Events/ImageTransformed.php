@@ -4,9 +4,6 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -21,11 +18,12 @@ class ImageTransformed implements ShouldBroadcastNow
      * Create a new event instance.
      */
     public function __construct(
+        public string $uuid,
         public string $path,
         public string $originalFileName,
-    )
-    {
+    ) {
         Log::info('Image transformation event', [
+            'uuid' => $this->uuid,
             'path' => $this->path,
             'originalFileName' => $this->originalFileName,
         ]);
@@ -43,14 +41,16 @@ class ImageTransformed implements ShouldBroadcastNow
         ];
     }
 
-    public function broadcastWith(): array 
+    public function broadcastWith(): array
     {
         Log::info('broadcastWith function', [
+            'uuid' => $this->uuid,
             'path' => $this->path,
             'originalFileName' => $this->originalFileName,
         ]);
 
         return [
+            'uuid' => $this->uuid,
             'path' => $this->path,
             'url' => Storage::url($this->path),
             'status' => 'success',

@@ -19,7 +19,9 @@ class TransformImage implements ShouldQueue
      * Create a new job instance.
      */
     public function __construct(
+        public string $uuid,
         public string $path,
+        public string $originalFilename,
         public int $width,
         public int $height
     ) {}
@@ -31,7 +33,7 @@ class TransformImage implements ShouldQueue
     {
         try {
             Log::info('Image transformation STARTED', [
-                'path' => $this->path
+                'path' => $this->path,
             ]);
 
             Log::info('Attempting to read file', [
@@ -44,18 +46,18 @@ class TransformImage implements ShouldQueue
             $image = Storage::disk('public')->get($this->path);
 
             Log::info('Attempting to get file', [
-                'image' => Storage::disk('public')->get($this->path)
+                'image' => Storage::disk('public')->get($this->path),
             ]);
 
             // transform image
-            $manager = new ImageManager(new Driver());
+            $manager = new ImageManager(new Driver);
 
             $imageToBeTransformed = $manager->read($image);
             $imageToBeTransformed->scale($this->width, $this->height);
 
             // encode file
             $extension = pathinfo($this->path, PATHINFO_EXTENSION);
-            $encodedImage = match(strtolower($extension)) {
+            $encodedImage = match (strtolower($extension)) {
                 'png' => $imageToBeTransformed->toPng(),
                 'gif' => $imageToBeTransformed->toGif(),
                 'webp' => $imageToBeTransformed->toWebp(),
@@ -66,18 +68,19 @@ class TransformImage implements ShouldQueue
             Storage::disk('public')->put($this->path, $encodedImage);
 
             Log::info('Image transformation completed', [
+                'uuid' => $this->uuid,
                 'path' => $this->path,
                 'width' => $this->width,
                 'height' => $this->height,
             ]);
 
             // fire event
-            event(new ImageTransformed($this->path, ''));
-        } catch(Exception $e) {
+            event(new ImageTransformed($this->uuid, $this->path, $this->originalFilename));
+        } catch (Exception $e) {
             Log::error('Image transformation failed', [
-            'path' => $this->path,
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
+                'path' => $this->path,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             // Optionally fire a failure event

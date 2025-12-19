@@ -12,17 +12,24 @@ class UploadController extends Controller
         $request->validate([
             'files' => 'required|array|min:1',
             'files.*' => 'required|file|image|max:10240',
+            'uuids' => 'required|array|min:1',
+            'uuids.*' => 'required|uuid',
+            'width' => 'required|integer|min:1|max:5000',
+            'height' => 'required|integer|min:1|max:5000',
         ]);
 
         $files = $request->file('files');
-        $allPaths = [];
+        $uuids = $request->input('uuids');
+        $width = $request->input('width');
+        $height = $request->input('height');
 
-        foreach ($files as $file) {
-            // dd("FILE =>", $file);
-            // Process your file here
+        foreach ($files as $index => $file) {
+            $uuid = $uuids[$index];
+            $originalFilename = $file->getClientOriginalName();
+
             $path = $file->store('images/test', 'public');
-            $allPaths[] = $path;
-            TransformImage::dispatch($path, 100, 100);
+
+            TransformImage::dispatch($uuid, $path, $originalFilename, $width, $height);
         }
 
         return back()->with('success', 'Files uploaded successfully!');
