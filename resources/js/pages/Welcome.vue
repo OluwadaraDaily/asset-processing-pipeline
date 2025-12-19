@@ -18,6 +18,8 @@ interface ImageState {
     status: 'pending' | 'uploading' | 'processing' | 'completed' | 'error';
     downloadUrl?: string;
     errorMessage?: string;
+    width: number;
+    height: number;
 }
 
 interface ImageTransformationEvent {
@@ -34,6 +36,11 @@ interface ImageTransformationFailureEvent {
     path: string;
     status: string;
     errorMessage: string;
+}
+
+interface ImageDimensions {
+    width: number;
+    height: number;
 }
 
 const imageStates = ref<Map<string, ImageState>>(new Map());
@@ -59,6 +66,28 @@ useEchoPublic<ImageTransformationFailureEvent>(CHANNELS.IMAGE_TRANSFORMATION, EV
     }
 });
 
+const getImageDimensions = (file: File): Promise<ImageDimensions> => {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        const url = URL.createObjectURL(file);
+
+        image.src = url;
+
+        image.onload = () => {
+            URL.revokeObjectURL(url);
+            resolve({
+                width: image.width,
+                height: image.height,
+            });
+        };
+
+        image.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('Failed to load image'));
+        };
+    });
+};
+
 const form = useForm({
     files: [] as File[],
     uuids: [] as string[],
@@ -66,7 +95,7 @@ const form = useForm({
     height: 100,
 });
 
-const handleFileChange = (e: Event) => {
+const handleFileChange = async (e: Event) => {
     const target = e.target as HTMLInputElement;
     if (target.files) {
         const newFiles = Array.from(target.files);
@@ -77,16 +106,35 @@ const handleFileChange = (e: Event) => {
         form.files = newFiles;
         form.uuids = newFiles.map(() => generateUUID());
 
-        // Initialize state for each image
-        newFiles.forEach((file, index) => {
+        for (let index = 0; index < newFiles.length; index++) {
+            const file = newFiles[index];
             const uuid = form.uuids[index];
-            imageStates.value.set(uuid, {
-                uuid,
-                file,
-                previewUrl: URL.createObjectURL(file),
-                status: 'pending',
-            });
-        });
+
+            try {
+                const dimensions = await getImageDimensions(file);
+
+                imageStates.value.set(uuid, {
+                    uuid,
+                    file,
+                    previewUrl: URL.createObjectURL(file),
+                    status: 'pending',
+                    width: dimensions.width,
+                    height: dimensions.height,
+                });
+            } catch (error) {
+                console.error(`Failed to get dimensions for ${file.name}:`, error);
+
+                imageStates.value.set(uuid, {
+                    uuid,
+                    file,
+                    previewUrl: URL.createObjectURL(file),
+                    status: 'error',
+                    width: 0,
+                    height: 0,
+                    errorMessage: 'Failed to read image dimensions',
+                });
+            }
+        }
     }
 };
 
@@ -167,7 +215,7 @@ const getStatusDisplay = (status: ImageState['status']) => {
 
 const getStatusColor = (status: ImageState['status']) => {
     return {
-        pending: 'bg-gray-100 text-gray-800',
+        pending: 'bg-gray-200 text-gray-800',
         uploading: 'bg-blue-100 text-blue-800',
         processing: 'bg-yellow-100/50 text-yellow-800',
         completed: 'bg-green-100 text-green-800',
@@ -182,6 +230,7 @@ onUnmounted(() => {
 
 <template>
     <div class="mx-auto flex h-full w-[60%] flex-col space-y-8">
+        <!-- Upload Form -->
         <div class="mt-20 items-center justify-center p-4">
             <h1 class="mb-8 text-3xl font-bold">Upload Form</h1>
             <form class="space-y-5" @submit.prevent="submit">
@@ -215,6 +264,7 @@ onUnmounted(() => {
                     </div>
                     <div class="flex flex-col gap-1">
                         <p class="font-medium">{{ state.file.name }}</p>
+                        <p class="text-sm text-gray-600">{{ state.width }}px × {{ state.height }}px</p>
                         <span class="inline-flex w-max items-center rounded-full px-2 py-1 text-xs font-medium" :class="getStatusColor(state.status)">
                             {{ getStatusDisplay(state.status) }}
                         </span>
