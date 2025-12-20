@@ -186,32 +186,32 @@ const submit = () => {
     });
 };
 
-// const retryImageUpload = (uuid: string) => {
-//     const state = imageStates.value.get(uuid);
-//     if (!state || state.status !== 'error') return;
+const retryImageUpload = (uuid: string) => {
+    const state = imageStates.value.get(uuid);
+    if (!state || state.status !== 'error') return;
 
-//     // Re-upload single file
-//     const retryForm = useForm({
-//         files: [state.file],
-//         uuids: [uuid],
-//         width: form.width,
-//         height: form.height,
-//     });
+    // Re-upload single file
+    const retryForm = useForm({
+        files: [state.file],
+        uuids: [uuid],
+        width: form.width,
+        height: form.height,
+    });
 
-//     state.status = 'uploading';
-//     state.errorMessage = undefined;
+    state.status = 'uploading';
+    state.errorMessage = undefined;
 
-//     retryForm.post('/upload', {
-//         forceFormData: true,
-//         onSuccess: () => {
-//             state.status = 'processing';
-//         },
-//         onError: () => {
-//             state.status = 'error';
-//             state.errorMessage = 'Retry failed';
-//         },
-//     });
-// };
+    retryForm.post('/upload', {
+        forceFormData: true,
+        onSuccess: () => {
+            state.status = 'processing';
+        },
+        onError: () => {
+            state.status = 'error';
+            state.errorMessage = 'Retry failed';
+        },
+    });
+};
 
 const getStatusDisplay = (status: ImageState['status']) => {
     return {
@@ -334,7 +334,14 @@ onUnmounted(() => {
                                         {{ state.errorMessage }}
                                     </p>
                                 </div>
-                                <div>
+                                <div class="flex gap-2">
+                                    <Button
+                                        v-if="state.status === 'error'"
+                                        class="border border-blue-500 bg-white text-blue-500 hover:bg-blue-500 hover:text-white"
+                                        @click="() => retryImageUpload(state.uuid)"
+                                    >
+                                        Retry
+                                    </Button>
                                     <Button
                                         class="group self-end border border-red-500 bg-white text-red-500 hover:cursor-pointer hover:bg-red-500 hover:text-white"
                                         @click="() => removeImage(state.uuid)"
