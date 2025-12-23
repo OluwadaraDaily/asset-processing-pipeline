@@ -15,3 +15,11 @@ export const formatFileSize = (bytes: number): string => {
     }
     return `${kb.toFixed(2)} KB`;
 };
+
+export const getCurrentDate = () => {
+    const now = new Date();
+    const day = now.getDate();
+    const month = now.toLocaleString('en-US', { month: 'long' });
+    const year = now.getFullYear();
+    return `${day} ${month} ${year}`;
+};
