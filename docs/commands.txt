@@ -1,0 +1,9 @@
+Start Reverb Server
+
+php artisan reverb:start --host="0.0.0.0" --port=8080 --hostname="example.test"
+
+Start Queue Worker
+php artisan queue:work
+
+Start FE Server
+npm run dev
