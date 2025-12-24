@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ImageState, useImageStore } from '@/stores/imageStore';
+import { useImageStore } from '@/stores/imageStore';
+import { ImageState } from '@/types/images';
 import { useForm } from '@inertiajs/vue3';
 import { storeToRefs } from 'pinia';
 import { ref } from 'vue';
@@ -27,6 +28,7 @@ const retryImageUpload = (uuid: string) => {
 
 const removeImage = (uuid: string) => {
     console.log('removeImage =>', uuid);
+    imageStore.removeImage(uuid);
 };
 
 const handleImageSelect = (uuid: string) => {
@@ -58,6 +60,10 @@ const handleClickOutside = (event: MouseEvent) => {
     if (!isCard) {
         selectedImage.value = null;
     }
+};
+
+const proceedToNextStage = () => {
+    imageStore.moveToNextStage();
 };
 </script>
 
@@ -117,7 +123,7 @@ const handleClickOutside = (event: MouseEvent) => {
             class="deselect-area ml-70 flex-1 overflow-y-auto"
             @click="handleClickOutside"
         >
-            <div class="m-8 flex items-center gap-5">
+            <div class="m-8 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
                 <ImageStateCard
                     v-for="state in images"
                     :key="state.uuid"
@@ -129,12 +135,7 @@ const handleClickOutside = (event: MouseEvent) => {
                 />
             </div>
             <div class="flex justify-end">
-                <Button
-                    type="submit"
-                    form="resize-form"
-                    class=""
-                    >Proceed</Button
-                >
+                <Button @click.prevent="proceedToNextStage"> Proceed </Button>
             </div>
         </div>
     </div>

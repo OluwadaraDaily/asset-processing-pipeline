@@ -26,6 +26,7 @@ const emit = defineEmits<{
     retry: [uuid: string];
     remove: [uuid: string];
     onSelect: [uuid: string];
+    download: [uuid: string];
 }>();
 
 const getStatusDisplay = (status: ImageState['status']) => {
@@ -102,7 +103,30 @@ const handleKeyDown = (event: KeyboardEvent) => {
                 </div>
                 <div class="min-w-0 flex-1">
                     <h3 class="truncate text-base font-semibold text-gray-900">{{ imageState.file.name }}</h3>
-                    <p class="mt-0.5 text-sm text-gray-500">{{ imageState.width }} × {{ imageState.height }}</p>
+                    <div class="mt-1 flex items-center gap-4">
+                        <p class="text-xs text-gray-500">{{ imageState.width }} × {{ imageState.height }}</p>
+                        <span>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                class="size-6"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    fill="none"
+                                    stroke="#2b7fff"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M5 12h14m-4 4l4-4m-4-4l4 4"
+                                />
+                            </svg>
+                        </span>
+                        <p class="rounded bg-gray-100 px-2 py-1 font-mono text-xs text-gray-700">
+                            {{ imageState.targetWidth }} × {{ imageState.targetHeight }}
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -170,6 +194,13 @@ const handleKeyDown = (event: KeyboardEvent) => {
                     {{ getStatusDisplay(imageState.status) }}
                 </span>
                 <div class="flex gap-2">
+                    <Button
+                        v-if="imageState.status === 'completed' && imageState.downloadUrl"
+                        class="border border-green-500 bg-white text-green-600 hover:bg-green-500 hover:text-white"
+                        @click.stop="emit('download', imageState.uuid)"
+                    >
+                        Download
+                    </Button>
                     <Button
                         v-if="imageState.status === 'error'"
                         class="border border-blue-500 bg-white text-blue-500 hover:bg-blue-500 hover:text-white"

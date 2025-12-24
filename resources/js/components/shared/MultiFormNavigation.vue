@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ImageResizeStage, useImageStore } from '@/stores/imageStore';
+import { useImageStore } from '@/stores/imageStore';
+import { ImageResizeStage } from '@/types/images';
 import { storeToRefs } from 'pinia';
 
 const { currentStage, isStageDone } = storeToRefs(useImageStore());
