@@ -19,11 +19,12 @@ interface Props {
     imageState: ImageState;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
     retry: [uuid: string];
     remove: [uuid: string];
+    onSelect: [uuid: string];
 }>();
 
 const getStatusDisplay = (status: ImageState['status']) => {
@@ -45,10 +46,21 @@ const getStatusColor = (status: ImageState['status']) => {
         error: 'bg-red-100/50 text-red-800',
     }[status];
 };
+
+const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+        emit('onSelect', props.imageState.uuid);
+    }
+};
 </script>
 
 <template>
-    <div class="flex w-full max-w-[315px] flex-col overflow-hidden rounded-3xl bg-white shadow-lg">
+    <div
+        tabindex="0"
+        class="flex w-full max-w-[315px] flex-col overflow-hidden rounded-3xl bg-white shadow-lg transition-all hover:ring-2 hover:ring-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        @click="$emit('onSelect', imageState.uuid)"
+        @keydown="handleKeyDown"
+    >
         <div class="relative h-64 w-full">
             <img
                 :src="imageState.previewUrl"
@@ -156,13 +168,13 @@ const getStatusColor = (status: ImageState['status']) => {
                     <Button
                         v-if="imageState.status === 'error'"
                         class="border border-blue-500 bg-white text-blue-500 hover:bg-blue-500 hover:text-white"
-                        @click="() => emit('retry', imageState.uuid)"
+                        @click.stop="emit('retry', imageState.uuid)"
                     >
                         Retry
                     </Button>
                     <Button
                         class="group border border-red-500 bg-white text-red-500 hover:bg-red-500 hover:text-white"
-                        @click="() => emit('remove', imageState.uuid)"
+                        @click.stop="emit('remove', imageState.uuid)"
                     >
                         Delete
                     </Button>
