@@ -69,8 +69,8 @@ export const useImageStore = defineStore('image-store', () => {
                     status: 'pending',
                     width: dimensions.width,
                     height: dimensions.height,
-                    targetWidth: 100,
-                    targetHeight: 100,
+                    targetWidth: dimensions.width,
+                    targetHeight: dimensions.height,
                 });
             } catch (error) {
                 console.error(`Failed to get dimensions for ${file.name}:`, error);

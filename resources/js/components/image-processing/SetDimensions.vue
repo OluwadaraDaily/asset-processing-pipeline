@@ -8,14 +8,11 @@ import { Input } from '../ui/input';
 import Label from '../ui/label/Label.vue';
 import ImageStateCard from './ImageStateCard.vue';
 
-const { images: imagesState } = storeToRefs(useImageStore());
+const imageStore = useImageStore();
 
-// interface ImageDimensions {
-//     uuid: string;
-//     file: File;
-//     width?: number;
-//     height?: number;
-// }
+const { images } = storeToRefs(imageStore);
+
+const selectedImage = ref<ImageState | null>(null);
 
 const form = useForm({
     files: [] as File[],
@@ -24,12 +21,6 @@ const form = useForm({
     height: 100,
 });
 
-const selectedImage = ref<ImageState | null>(null);
-
-const submit = (event: Event) => {
-    console.log('EVENT ->', event);
-};
-
 const retryImageUpload = (uuid: string) => {
     console.log('retryImageUpload =>', uuid);
 };
@@ -37,8 +28,36 @@ const retryImageUpload = (uuid: string) => {
 const removeImage = (uuid: string) => {
     console.log('removeImage =>', uuid);
 };
+
 const handleImageSelect = (uuid: string) => {
-    console.log('handleImageSelect =>', uuid);
+    if (selectedImage.value?.uuid === uuid) {
+        selectedImage.value = null;
+        return;
+    }
+    const image = images.value.find((image) => image.uuid === uuid);
+    if (image) {
+        selectedImage.value = image;
+        form.width = image.targetWidth;
+        form.height = image.targetHeight;
+    }
+};
+
+const setDimension = (uuid: string) => {
+    const width = form.width;
+    const height = form.height;
+
+    imageStore.updateImageDimensions(uuid, width, height);
+
+    selectedImage.value = null;
+};
+
+const handleClickOutside = (event: MouseEvent) => {
+    const clickedElement = event.target as HTMLElement;
+    const isCard = clickedElement.closest('[data-card]') !== null;
+
+    if (!isCard) {
+        selectedImage.value = null;
+    }
 };
 </script>
 
@@ -46,34 +65,43 @@ const handleImageSelect = (uuid: string) => {
     <div class="flex h-full">
         <aside class="fixed left-0 h-full w-70 flex-shrink-0 border-r border-gray-200 shadow-md">
             <div class="mx-auto h-full w-[90%]">
-                <div v-if="selectedImage">
+                <div
+                    v-if="selectedImage"
+                    class="mt-8"
+                >
                     <h1 class="mb-6 text-xl font-semibold">Resize Settings</h1>
                     <form
                         id="resize-form"
-                        @submit.prevent="submit"
+                        @submit.prevent="setDimension(selectedImage!.uuid)"
                     >
                         <div class="flex items-center gap-5">
                             <div class="flex-[50%]">
                                 <Label>Width</Label>
                                 <Input
                                     type="number"
-                                    class="mt-0.5"
+                                    class="mt-1"
                                     name="width"
-                                    :value="form.width"
-                                    @input="form.width = Number($event.target.value)"
+                                    v-model.number="form.width"
                                 />
                             </div>
                             <div class="flex-[50%]">
                                 <Label>Height</Label>
                                 <Input
                                     type="number"
-                                    class="mt-0.5"
+                                    class="mt-1"
                                     placeholder="100"
                                     name="height"
-                                    :value="form.height"
-                                    @input="form.height = Number($event.target.value)"
+                                    v-model.number="form.height"
                                 />
                             </div>
+                        </div>
+                        <div class="mt-5 flex justify-end">
+                            <Button
+                                type="submit"
+                                class="w-full"
+                            >
+                                Set Dimension
+                            </Button>
                         </div>
                     </form>
                 </div>
@@ -85,12 +113,16 @@ const handleImageSelect = (uuid: string) => {
                 </div>
             </div>
         </aside>
-        <div class="ml-70 flex-1 overflow-y-auto">
+        <div
+            class="deselect-area ml-70 flex-1 overflow-y-auto"
+            @click="handleClickOutside"
+        >
             <div class="m-8 flex items-center gap-5">
                 <ImageStateCard
-                    v-for="state in imagesState"
+                    v-for="state in images"
                     :key="state.uuid"
                     :image-state="state"
+                    :is-selected="selectedImage?.uuid === state.uuid"
                     @retry="retryImageUpload"
                     @remove="removeImage"
                     @onSelect="handleImageSelect"

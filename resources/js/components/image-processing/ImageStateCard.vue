@@ -17,6 +17,7 @@ interface ImageState {
 
 interface Props {
     imageState: ImageState;
+    isSelected?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -56,10 +57,14 @@ const handleKeyDown = (event: KeyboardEvent) => {
 
 <template>
     <div
+        data-card
         tabindex="0"
-        class="flex w-full max-w-[315px] flex-col overflow-hidden rounded-3xl bg-white shadow-lg transition-all hover:ring-2 hover:ring-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-        @click="$emit('onSelect', imageState.uuid)"
-        @keydown="handleKeyDown"
+        :class="[
+            'flex w-full max-w-[315px] flex-col overflow-hidden rounded-3xl bg-white shadow-lg transition-all focus:outline-none',
+            isSelected ? 'ring-2 ring-blue-500' : 'hover:ring-2 hover:ring-blue-500 focus:ring-2 focus:ring-gray-400',
+        ]"
+        @click.stop="$emit('onSelect', imageState.uuid)"
+        @keydown.stop="handleKeyDown"
     >
         <div class="relative h-64 w-full">
             <img
