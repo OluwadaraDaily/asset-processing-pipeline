@@ -68,7 +68,7 @@ const proceedToNextStage = () => {
 </script>
 
 <template>
-    <div class="flex h-full">
+    <div class="mx-auto mt-8 flex h-full w-[90%]">
         <aside class="fixed left-0 h-full w-70 flex-shrink-0 border-r border-gray-200 shadow-md">
             <div class="mx-auto h-full w-[90%]">
                 <div
