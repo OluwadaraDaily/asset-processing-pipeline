@@ -1,13 +1,23 @@
 <script setup lang="ts">
+import { Button } from '@/components/ui/button';
+import {
+    ImageCard,
+    ImageCardContent,
+    ImageCardDimensions,
+    ImageCardHeader,
+    ImageCardIcon,
+    ImageCardMetadata,
+    ImageCardPreview,
+    ImageCardTitle,
+} from '@/components/ui/image-card';
+import { Input } from '@/components/ui/input';
+import Label from '@/components/ui/label/Label.vue';
 import { useImageStore } from '@/stores/imageStore';
 import { ImageState } from '@/types/images';
+import { getCurrentDate } from '@/utils';
 import { useForm } from '@inertiajs/vue3';
 import { storeToRefs } from 'pinia';
 import { ref } from 'vue';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import Label from '../ui/label/Label.vue';
-import ImageStateCard from './ImageStateCard.vue';
 
 const imageStore = useImageStore();
 
@@ -21,15 +31,6 @@ const form = useForm({
     width: 100,
     height: 100,
 });
-
-const retryImageUpload = (uuid: string) => {
-    console.log('retryImageUpload =>', uuid);
-};
-
-const removeImage = (uuid: string) => {
-    console.log('removeImage =>', uuid);
-    imageStore.removeImage(uuid);
-};
 
 const handleImageSelect = (uuid: string) => {
     if (selectedImage.value?.uuid === uuid) {
@@ -124,15 +125,39 @@ const proceedToNextStage = () => {
             @click="handleClickOutside"
         >
             <div class="m-8 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-                <ImageStateCard
+                <ImageCard
                     v-for="state in images"
                     :key="state.uuid"
-                    :image-state="state"
-                    :is-selected="selectedImage?.uuid === state.uuid"
-                    @retry="retryImageUpload"
-                    @remove="removeImage"
-                    @onSelect="handleImageSelect"
-                />
+                    :uuid="state.uuid"
+                    :selectable="true"
+                    :selected="selectedImage?.uuid === state.uuid"
+                    @select="handleImageSelect"
+                >
+                    <ImageCardPreview
+                        :src="state.previewUrl"
+                        :alt="state.file.name"
+                    />
+
+                    <ImageCardContent>
+                        <ImageCardHeader>
+                            <ImageCardIcon />
+                            <ImageCardTitle>
+                                <h3 class="truncate text-base font-semibold text-gray-900">{{ state.file.name }}</h3>
+                                <ImageCardDimensions
+                                    :original-width="state.width"
+                                    :original-height="state.height"
+                                    :target-width="state.targetWidth"
+                                    :target-height="state.targetHeight"
+                                />
+                            </ImageCardTitle>
+                        </ImageCardHeader>
+
+                        <ImageCardMetadata
+                            label="Images | Library"
+                            :date="getCurrentDate()"
+                        />
+                    </ImageCardContent>
+                </ImageCard>
             </div>
             <div class="flex justify-end">
                 <Button @click.prevent="proceedToNextStage"> Proceed </Button>

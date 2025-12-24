@@ -1,7 +1,23 @@
 <script setup lang="ts">
-import ImageStateCard from '@/components/image-processing/ImageStateCard.vue';
 import { Button } from '@/components/ui/button';
+import {
+    ImageCard,
+    ImageCardActions,
+    ImageCardContent,
+    ImageCardDimensions,
+    ImageCardError,
+    ImageCardFooter,
+    ImageCardHeader,
+    ImageCardIcon,
+    ImageCardMetadata,
+    ImageCardPreview,
+    ImageCardStat,
+    ImageCardStats,
+    ImageCardStatus,
+    ImageCardTitle,
+} from '@/components/ui/image-card';
 import { useImageStore } from '@/stores/imageStore';
+import { getCurrentDate } from '@/utils';
 import { useForm } from '@inertiajs/vue3';
 import { storeToRefs } from 'pinia';
 import { computed, watch } from 'vue';
@@ -127,14 +143,83 @@ const submit = () => {
         >
             <h2 class="mb-5 text-2xl font-bold">Image Previews</h2>
             <div class="flex items-center gap-5">
-                <ImageStateCard
+                <ImageCard
                     v-for="state in imageStates"
                     :key="state.uuid"
-                    :image-state="state"
-                    @retry="retryImageUpload"
-                    @remove="removeImage"
-                    @download="downloadImage"
-                />
+                    :uuid="state.uuid"
+                >
+                    <ImageCardPreview
+                        :src="state.previewUrl"
+                        :alt="state.file.name"
+                    />
+
+                    <ImageCardContent>
+                        <ImageCardHeader>
+                            <ImageCardIcon />
+                            <ImageCardTitle>
+                                <h3 class="truncate text-base font-semibold text-gray-900">{{ state.file.name }}</h3>
+                                <ImageCardDimensions
+                                    :original-width="state.width"
+                                    :original-height="state.height"
+                                    :target-width="state.targetWidth"
+                                    :target-height="state.targetHeight"
+                                />
+                            </ImageCardTitle>
+                        </ImageCardHeader>
+
+                        <ImageCardMetadata
+                            label="Images | Library"
+                            :date="getCurrentDate()"
+                        />
+
+                        <ImageCardStats>
+                            <ImageCardStat
+                                icon="eye"
+                                :value="0"
+                            />
+                            <ImageCardStat
+                                icon="comment"
+                                :value="0"
+                            />
+                            <ImageCardStat
+                                icon="emoji"
+                                :value="0"
+                            />
+                        </ImageCardStats>
+
+                        <ImageCardFooter>
+                            <ImageCardStatus :status="state.status" />
+
+                            <ImageCardActions>
+                                <Button
+                                    v-if="state.status === 'completed' && state.downloadUrl"
+                                    class="border border-green-500 bg-white text-green-600 hover:bg-green-500 hover:text-white"
+                                    @click.stop="downloadImage(state.uuid)"
+                                >
+                                    Download
+                                </Button>
+                                <Button
+                                    v-if="state.status === 'error'"
+                                    class="border border-blue-500 bg-white text-blue-500 hover:bg-blue-500 hover:text-white"
+                                    @click.stop="retryImageUpload(state.uuid)"
+                                >
+                                    Retry
+                                </Button>
+                                <Button
+                                    class="group border border-red-500 bg-white text-red-500 hover:bg-red-500 hover:text-white"
+                                    @click.stop="removeImage(state.uuid)"
+                                >
+                                    Delete
+                                </Button>
+                            </ImageCardActions>
+                        </ImageCardFooter>
+
+                        <ImageCardError
+                            v-if="state.errorMessage"
+                            :message="state.errorMessage"
+                        />
+                    </ImageCardContent>
+                </ImageCard>
             </div>
         </div>
         <div class="flex items-center justify-end gap-4">
