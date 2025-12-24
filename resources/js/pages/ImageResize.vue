@@ -57,7 +57,7 @@ useEchoPublic<ImageTransformationEvent>(CHANNELS.IMAGE_TRANSFORMATION, EVENTS.IM
 });
 
 useEchoPublic<ImageTransformationFailureEvent>(CHANNELS.IMAGE_TRANSFORMATION, EVENTS.IMAGE_TRANSFORMATION_FAILURE, (event) => {
-    console.log('There has been an error =>', event);
+    console.error('There has been an error =>', event);
     toast.error(`${event.originalFilename} transformation failed.Please try again.`);
     const state = imageStates.value.find((state) => state.uuid === event.uuid);
     if (state) {
