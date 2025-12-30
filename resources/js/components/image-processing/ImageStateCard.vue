@@ -67,6 +67,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
         @click.stop="$emit('onSelect', imageState.uuid)"
         @keydown.stop="handleKeyDown"
     >
+        <!-- Image Section -->
         <div class="relative h-64 w-full">
             <img
                 :src="imageState.previewUrl"
@@ -75,6 +76,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
             />
         </div>
         <div class="flex flex-col gap-4 p-4">
+            <!-- Header Section -->
             <div class="flex items-start gap-2">
                 <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-gray-100">
                     <svg
@@ -130,10 +132,12 @@ const handleKeyDown = (event: KeyboardEvent) => {
                 </div>
             </div>
 
+            <!-- Tag Section -->
             <div class="rounded-lg bg-blue-50 p-3">
                 <h4 class="text-sm font-medium text-gray-900">Images | Library | {{ getCurrentDate() }}</h4>
             </div>
 
+            <!-- Icons Section -->
             <div class="flex items-center gap-4 text-sm text-gray-600">
                 <div class="flex items-center gap-1.5">
                     <svg
@@ -186,6 +190,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
                 </div>
             </div>
 
+            <!-- State and Button Section -->
             <div class="flex items-center justify-between">
                 <span
                     class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium"
@@ -217,6 +222,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
                 </div>
             </div>
 
+            <!-- Optional Error Message Section -->
             <p
                 v-if="imageState.errorMessage"
                 class="text-sm text-red-600"

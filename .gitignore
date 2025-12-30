@@ -28,3 +28,5 @@ yarn-error.log
 /.claude
 CLAUDE.md
 .cursor/
+
+docs/deployment.txt

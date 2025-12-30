@@ -8,4 +8,8 @@ Route::get('/', function () {
     return Inertia::render('ImageResize');
 })->name('home');
 
+Route::get('/test', function () {
+    return Inertia::render('TestingGround');
+})->name('testing-ground');
+
 Route::post('/upload', [UploadController::class, 'store']);
