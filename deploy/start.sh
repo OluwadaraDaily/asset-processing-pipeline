@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
-echo "Running composer"
-composer install --no-dev --working-dir=/var/www/html
+set -e
+
+# Create SQLite database if it doesn't exist
+if [ "$DB_CONNECTION" = "sqlite" ] && [ ! -f "$DB_DATABASE" ]; then
+    echo "Creating SQLite database at $DB_DATABASE..."
+    mkdir -p "$(dirname "$DB_DATABASE")"
+    touch "$DB_DATABASE"
+    chmod 664 "$DB_DATABASE"
+fi
+
+echo "Clearing config cache..."
+php artisan config:clear
 
 echo "Caching config..."
 php artisan config:cache
