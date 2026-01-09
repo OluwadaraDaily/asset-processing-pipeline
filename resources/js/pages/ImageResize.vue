@@ -80,7 +80,7 @@ async function pollImageStatus(uuid: string, startTime: number) {
             // Timeout after 2 minutes
             state.status = 'error';
             state.errorMessage = 'Processing is taking longer than expected. Please try again.';
-            toast.error(`${state.originalFilename} is taking too long to process.`);
+            toast.error(`${data.original_filename} is taking too long to process.`);
             stopPolling(uuid);
         }
     } catch (error) {

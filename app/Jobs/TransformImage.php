@@ -104,6 +104,9 @@ class TransformImage implements ShouldQueue
                 'path' => $this->image->path,
             ]);
 
+            // Check if all images in this upload are done and update upload status
+            $this->updateUploadStatus();
+
             // Fire event (keeping for future WebSocket support)
             event(new ImageTransformed($this->image->uuid, $this->image->path, $this->image->original_filename));
         } catch (Exception $e) {
@@ -122,6 +125,9 @@ class TransformImage implements ShouldQueue
                     'error_message' => $e->getMessage(),
                 ]);
 
+                // Check if all images in this upload are done and update upload status
+                $this->updateUploadStatus();
+
                 // Fire event (keeping for future WebSocket support)
                 event(new ImageTransformationFailed($this->image->uuid, $this->image->path, $this->image->original_filename, $e->getMessage()));
             }
@@ -130,5 +136,37 @@ class TransformImage implements ShouldQueue
             throw $e;
         }
 
+    }
+
+    /**
+     * Update the upload status based on all images' statuses.
+     */
+    protected function updateUploadStatus(): void
+    {
+        $upload = $this->image->upload;
+
+        // Get all images for this upload
+        $images = $upload->images;
+
+        // Check if all images are done (completed or failed)
+        $allDone = $images->every(function ($image) {
+            return in_array($image->status, ['completed', 'failed']);
+        });
+
+        if ($allDone) {
+            // Check if any failed
+            $anyFailed = $images->contains(function ($image) {
+                return $image->status === 'failed';
+            });
+
+            $upload->update([
+                'status' => $anyFailed ? 'failed' : 'completed',
+            ]);
+
+            Log::info('Upload status updated', [
+                'upload_id' => $upload->id,
+                'status' => $upload->status,
+            ]);
+        }
     }
 }

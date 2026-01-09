@@ -32,6 +32,6 @@ class LoginController extends Controller
 
         Auth::login($user);
 
-        return redirect()->intended(route('home'));
+        return redirect()->intended(route('app.image-resize'));
     }
 }

@@ -19,10 +19,15 @@ Route::middleware('guest')->group(function () {
 // Logout (auth required)
 Route::post('/logout', [LogoutController::class, 'destroy'])->name('logout')->middleware('auth');
 
-// Main app routes (no auth required - guests can use with session)
+// Landing page
 Route::get('/', function () {
+    return Inertia::render('Landing');
+})->name('landing');
+
+// Image Resizer App (no auth required - guests can use with session)
+Route::get('/image-resizer', function () {
     return Inertia::render('ImageResize');
-})->name('home');
+})->name('app.image-resize');
 
 Route::get('/test', function () {
     return Inertia::render('TestingGround');
