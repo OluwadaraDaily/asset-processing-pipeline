@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\TransformImage;
+use App\Models\Image;
+use App\Models\Upload;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class UploadController extends Controller
 {
@@ -67,18 +70,51 @@ class UploadController extends Controller
         $targetWidths = $request->input('targetWidths');
         $targetHeights = $request->input('targetHeights');
 
-        foreach ($files as $index => $file) {
-            $uuid = $uuids[$index];
-            $originalFilename = $file->getClientOriginalName();
-            $width = $widths[$index];
-            $height = $heights[$index];
-            $targetWidth = $targetWidths[$index];
-            $targetHeight = $targetHeights[$index];
-
-            $path = $file->store('images/test', 'public');
-
-            TransformImage::dispatch($uuid, $path, $originalFilename, $targetWidth, $targetHeight);
+        // Get or create session ID for guest tracking
+        $sessionId = session()->getId();
+        if (! $sessionId) {
+            session()->start();
+            $sessionId = session()->getId();
         }
+
+        DB::transaction(function () use ($request, $files, $uuids, $widths, $heights, $targetWidths, $targetHeights, $sessionId) {
+            // Create Upload record
+            $upload = Upload::create([
+                'user_id' => auth()->id(),
+                'session_id' => $sessionId,
+                'device' => $request->userAgent(),
+                'ip_address' => $request->ip(),
+                'no_of_files' => count($files),
+                'status' => 'processing',
+                'storage_path' => 'images/'.date('Y-m-d'),
+            ]);
+
+            foreach ($files as $index => $file) {
+                $uuid = $uuids[$index]; // Use frontend-provided UUID
+                $originalFilename = $file->getClientOriginalName();
+                $targetWidth = $targetWidths[$index];
+                $targetHeight = $targetHeights[$index];
+
+                // Store file
+                $path = $file->store('images/'.date('Y-m-d'), 'public');
+
+                // Create Image record with frontend-provided UUID
+                $image = Image::create([
+                    'upload_id' => $upload->id,
+                    'uuid' => $uuid, // Use the UUID from frontend
+                    'original_filename' => $originalFilename,
+                    'path' => $path,
+                    'status' => 'pending',
+                    'original_width' => $widths[$index],
+                    'original_height' => $heights[$index],
+                    'target_width' => $targetWidth,
+                    'target_height' => $targetHeight,
+                ]);
+
+                // Dispatch job
+                TransformImage::dispatch($image);
+            }
+        });
 
         return back()->with('success', 'Files uploaded successfully!');
     }

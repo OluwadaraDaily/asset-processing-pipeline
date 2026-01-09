@@ -1,3 +1,7 @@
 vendor/
 node_modules/
 !public/build
+.env
+.env.*
+!.env.example
+public/hot

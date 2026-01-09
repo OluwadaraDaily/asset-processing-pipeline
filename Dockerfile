@@ -46,8 +46,16 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # Install frontend dependencies and build assets
 RUN npm ci
 
-# Build frontend assets during image creation
+# Accept build arguments for asset URLs
+ARG APP_URL=https://asset-processing-pipeline-latest.onrender.com
+ARG ASSET_URL=https://asset-processing-pipeline-latest.onrender.com
+
+# Set as environment variables for the build
+ENV APP_URL=${APP_URL}
+ENV ASSET_URL=${ASSET_URL}
 ENV NODE_ENV=production
+
+# Build frontend assets during image creation
 RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
 
 # Verify build output exists

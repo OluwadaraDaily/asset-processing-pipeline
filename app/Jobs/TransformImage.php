@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Events\ImageTransformationFailed;
 use App\Events\ImageTransformed;
+use App\Models\Image;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -26,11 +27,7 @@ class TransformImage implements ShouldQueue
      * Create a new job instance.
      */
     public function __construct(
-        public string $uuid,
-        public string $path,
-        public string $originalFilename,
-        public int $width,
-        public int $height
+        public Image $image
     ) {}
 
     /**
@@ -41,40 +38,51 @@ class TransformImage implements ShouldQueue
         // Increase memory limit for large image processing
         ini_set('memory_limit', '512M');
 
+        // Update status to processing
+        $this->image->update(['status' => 'processing']);
+
         try {
             Log::info('Image transformation STARTED', [
-                'path' => $this->path,
-                'width' => $this->width,
-                'height' => $this->height,
+                'path' => $this->image->path,
+                'width' => $this->image->target_width,
+                'height' => $this->image->target_height,
             ]);
 
             // Verify file exists
-            if (! Storage::disk('public')->exists($this->path)) {
-                throw new Exception("Image file not found: {$this->path}");
+            if (! Storage::disk('public')->exists($this->image->path)) {
+                throw new Exception("Image file not found: {$this->image->path}");
             }
 
             // Get file size for logging
-            $fileSize = Storage::disk('public')->size($this->path);
+            $fileSize = Storage::disk('public')->size($this->image->path);
             Log::info('Processing image', [
                 'size_bytes' => $fileSize,
                 'size_mb' => round($fileSize / 1024 / 1024, 2),
             ]);
 
-            // Get image
-            $image = Storage::disk('public')->get($this->path);
+            // Get image content
+            $imageContent = Storage::disk('public')->get($this->image->path);
 
             // Transform image
             $manager = new ImageManager(new Driver);
 
-            $imageToBeTransformed = $manager->read($image);
+            $imageToBeTransformed = $manager->read($imageContent);
+
+            // Store original dimensions if not set
+            if (! $this->image->original_width || ! $this->image->original_height) {
+                $this->image->update([
+                    'original_width' => $imageToBeTransformed->width(),
+                    'original_height' => $imageToBeTransformed->height(),
+                ]);
+            }
 
             // Free up memory
-            unset($image);
+            unset($imageContent);
 
-            $imageToBeTransformed->scale($this->width, $this->height);
+            $imageToBeTransformed->scale($this->image->target_width, $this->image->target_height);
 
             // Encode file
-            $extension = pathinfo($this->path, PATHINFO_EXTENSION);
+            $extension = pathinfo($this->image->path, PATHINFO_EXTENSION);
             $encodedImage = match (strtolower($extension)) {
                 'png' => $imageToBeTransformed->toPng(),
                 'gif' => $imageToBeTransformed->toGif(),
@@ -86,26 +94,36 @@ class TransformImage implements ShouldQueue
             unset($imageToBeTransformed);
 
             // Save to replace original image
-            Storage::disk('public')->put($this->path, $encodedImage);
+            Storage::disk('public')->put($this->image->path, $encodedImage);
+
+            // Update status to completed
+            $this->image->update(['status' => 'completed']);
 
             Log::info('Image transformation completed', [
-                'uuid' => $this->uuid,
-                'path' => $this->path,
+                'uuid' => $this->image->uuid,
+                'path' => $this->image->path,
             ]);
 
-            // Fire event
-            event(new ImageTransformed($this->uuid, $this->path, $this->originalFilename));
+            // Fire event (keeping for future WebSocket support)
+            event(new ImageTransformed($this->image->uuid, $this->image->path, $this->image->original_filename));
         } catch (Exception $e) {
             Log::error('Image transformation failed', [
-                'uuid' => $this->uuid,
-                'path' => $this->path,
+                'uuid' => $this->image->uuid,
+                'path' => $this->image->path,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'attempt' => $this->attempts(),
             ]);
 
             if ($this->attempts() >= $this->tries) {
-                event(new ImageTransformationFailed($this->uuid, $this->path, $this->originalFilename, $e->getMessage()));
+                // Update status to failed
+                $this->image->update([
+                    'status' => 'failed',
+                    'error_message' => $e->getMessage(),
+                ]);
+
+                // Fire event (keeping for future WebSocket support)
+                event(new ImageTransformationFailed($this->image->uuid, $this->image->path, $this->image->original_filename, $e->getMessage()));
             }
 
             // Re-throw to mark job as failed (triggers auto-retry by Laravel)
