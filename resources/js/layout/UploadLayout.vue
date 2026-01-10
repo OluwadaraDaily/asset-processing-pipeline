@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import MultiFormatNavigation from '@/components/shared/MultiFormNavigation.vue';
+import UserDropdown from '@/components/shared/UserDropdown.vue';
 </script>
 
 <template>
     <div class="flex h-screen flex-col">
-        <nav class="sticky top-0 z-10 w-full border-b border-gray-200 bg-white px-6 py-4 shadow-sm">
+        <nav class="sticky top-0 z-10 flex w-full items-center justify-between border-b border-gray-200 bg-white px-6 py-4 shadow-sm">
             <h1 class="text-xl font-bold">Image Resizer</h1>
+            <UserDropdown />
         </nav>
 
         <div class="flex flex-1 overflow-hidden">
