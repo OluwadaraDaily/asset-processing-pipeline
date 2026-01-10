@@ -25,6 +25,12 @@ function submit() {
     <div class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 dark:bg-gray-900">
         <div class="w-full max-w-md space-y-8">
             <div class="text-center">
+                <Link
+                    href="/"
+                    class="mb-4 inline-block text-2xl font-bold text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300"
+                >
+                    TransformX
+                </Link>
                 <h2 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Create your account</h2>
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Start resizing images today</p>
             </div>
